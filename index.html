@@ -925,6 +925,119 @@
   <!-- ═══════════════════ RENTAL MODE ═══════════════════ -->
   <div id="rental-section">
 
+    <!-- RENTAL TYPE SUB-TOGGLE -->
+    <div class="sub-toggle" id="subToggle">
+      <button class="sub-btn on-ltr" id="btnLT" onclick="setRentalType('lt')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 4h8M5 8h8M5 12h6M2 4h.5M2 8h.5M2 12h.5"/></svg>
+        Long-Term
+      </button>
+      <button class="sub-btn" id="btnST" onclick="setRentalType('st')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2l2 4 4.5.5-3.3 3 1 4.5L8 12l-4.2 2 1-4.5L1.5 6.5 6 6z"/></svg>
+        Airbnb / STR
+      </button>
+    </div>
+
+    <!-- LONG-TERM RENTAL INCOME -->
+    <div id="lt-section">
+      <div class="panel" style="border-color:rgba(34,197,94,0.2);">
+        <div class="panel-header" style="cursor:default;margin-bottom:8px;">
+          <div class="panel-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 0 12px rgba(34,197,94,0.25);">
+            <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 3 8-9"/><path d="M15 5h6v6"/></svg>
+          </div>
+          <span class="panel-title">Rental Income</span>
+        </div>
+        <div class="panel-body">
+          <div class="grid-3">
+            <div class="field">
+              <label>Monthly Rent</label>
+              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+                <input type="number" id="r-monthlyRent" value="3200" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Other Income/mo</label>
+              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+                <input type="number" id="r-otherIncome" value="0" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Vacancy</label>
+              <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+                <input type="number" id="r-vacancy" value="7" oninput="calc()">
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="display-row dr-green"><span class="dr-label">Effective Monthly Income</span><span class="dr-value" id="r-effectiveIncome">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHORT-TERM RENTAL INCOME -->
+    <div id="st-section" style="display:none;">
+      <div class="panel" style="border-color:rgba(251,146,60,0.2);">
+        <div class="panel-header" style="cursor:default;margin-bottom:8px;">
+          <div class="panel-icon" style="background:linear-gradient(135deg,#f97316,#ea580c);box-shadow:0 0 12px rgba(249,115,22,0.25);">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+          </div>
+          <span class="panel-title">Short-Term Rental Income</span>
+        </div>
+        <div class="panel-body">
+          <div class="grid-2">
+            <div class="field">
+              <label>Avg Nightly Rate</label>
+              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+                <input type="number" id="r-nightlyRate" value="225" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Occupancy</label>
+              <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+                <input type="number" id="r-occupancy" value="70" oninput="calc()">
+              </div>
+            </div>
+          </div>
+          <div class="grid-3">
+            <div class="field">
+              <label>Avg Stay (nights)</label>
+              <div class="input-wrap has-suffix"><span class="input-suffix">n</span>
+                <input type="number" id="r-avgStay" value="3" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Clean Fee/Guest</label>
+              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+                <input type="number" id="r-cleanFeeGuest" value="150" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Clean Cost/Turn</label>
+              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+                <input type="number" id="r-cleanCostTurn" value="120" oninput="calc()">
+              </div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>Platform Fee</label>
+              <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+                <input type="number" id="r-platformFee" value="3" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Furnishing Cost</label>
+              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+                <input type="number" id="r-furnishing" value="15000" oninput="calc()">
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="display-row dr-green"><span class="dr-label">Gross Monthly Revenue</span><span class="dr-value" id="r-grossMonthlyRev">—</span></div>
+          <div class="display-row dr-green"><span class="dr-label">Net Monthly (after fees/cleaning)</span><span class="dr-value" id="r-netMonthlyRev">—</span></div>
+        </div>
+      </div>
+    </div>
+
     <!-- SHARED PANELS (rental — collapsible) -->
     <div id="rp-property" class="panel">
       <div class="panel-header" onclick="togglePanel('rp-property')">
@@ -1143,119 +1256,6 @@
             <label>Total Carry Costs</label>
             <div class="display-val" id="r-totalCarry">—</div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RENTAL TYPE SUB-TOGGLE -->
-    <div class="sub-toggle" id="subToggle">
-      <button class="sub-btn on-ltr" id="btnLT" onclick="setRentalType('lt')">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 4h8M5 8h8M5 12h6M2 4h.5M2 8h.5M2 12h.5"/></svg>
-        Long-Term
-      </button>
-      <button class="sub-btn" id="btnST" onclick="setRentalType('st')">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2l2 4 4.5.5-3.3 3 1 4.5L8 12l-4.2 2 1-4.5L1.5 6.5 6 6z"/></svg>
-        Airbnb / STR
-      </button>
-    </div>
-
-    <!-- LONG-TERM RENTAL INCOME -->
-    <div id="lt-section">
-      <div class="panel" style="border-color:rgba(34,197,94,0.2);">
-        <div class="panel-header" style="cursor:default;margin-bottom:8px;">
-          <div class="panel-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 0 12px rgba(34,197,94,0.25);">
-            <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 3 8-9"/><path d="M15 5h6v6"/></svg>
-          </div>
-          <span class="panel-title">Rental Income</span>
-        </div>
-        <div class="panel-body">
-          <div class="grid-3">
-            <div class="field">
-              <label>Monthly Rent</label>
-              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
-                <input type="number" id="r-monthlyRent" value="3200" oninput="calc()">
-              </div>
-            </div>
-            <div class="field">
-              <label>Other Income/mo</label>
-              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
-                <input type="number" id="r-otherIncome" value="0" oninput="calc()">
-              </div>
-            </div>
-            <div class="field">
-              <label>Vacancy</label>
-              <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
-                <input type="number" id="r-vacancy" value="7" oninput="calc()">
-              </div>
-            </div>
-          </div>
-          <div class="divider"></div>
-          <div class="display-row dr-green"><span class="dr-label">Effective Monthly Income</span><span class="dr-value" id="r-effectiveIncome">—</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SHORT-TERM RENTAL INCOME -->
-    <div id="st-section" style="display:none;">
-      <div class="panel" style="border-color:rgba(251,146,60,0.2);">
-        <div class="panel-header" style="cursor:default;margin-bottom:8px;">
-          <div class="panel-icon" style="background:linear-gradient(135deg,#f97316,#ea580c);box-shadow:0 0 12px rgba(249,115,22,0.25);">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
-          </div>
-          <span class="panel-title">Short-Term Rental Income</span>
-        </div>
-        <div class="panel-body">
-          <div class="grid-2">
-            <div class="field">
-              <label>Avg Nightly Rate</label>
-              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
-                <input type="number" id="r-nightlyRate" value="225" oninput="calc()">
-              </div>
-            </div>
-            <div class="field">
-              <label>Occupancy</label>
-              <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
-                <input type="number" id="r-occupancy" value="70" oninput="calc()">
-              </div>
-            </div>
-          </div>
-          <div class="grid-3">
-            <div class="field">
-              <label>Avg Stay (nights)</label>
-              <div class="input-wrap has-suffix"><span class="input-suffix">n</span>
-                <input type="number" id="r-avgStay" value="3" oninput="calc()">
-              </div>
-            </div>
-            <div class="field">
-              <label>Clean Fee/Guest</label>
-              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
-                <input type="number" id="r-cleanFeeGuest" value="150" oninput="calc()">
-              </div>
-            </div>
-            <div class="field">
-              <label>Clean Cost/Turn</label>
-              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
-                <input type="number" id="r-cleanCostTurn" value="120" oninput="calc()">
-              </div>
-            </div>
-          </div>
-          <div class="grid-2">
-            <div class="field">
-              <label>Platform Fee</label>
-              <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
-                <input type="number" id="r-platformFee" value="3" oninput="calc()">
-              </div>
-            </div>
-            <div class="field">
-              <label>Furnishing Cost</label>
-              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
-                <input type="number" id="r-furnishing" value="15000" oninput="calc()">
-              </div>
-            </div>
-          </div>
-          <div class="divider"></div>
-          <div class="display-row dr-green"><span class="dr-label">Gross Monthly Revenue</span><span class="dr-value" id="r-grossMonthlyRev">—</span></div>
-          <div class="display-row dr-green"><span class="dr-label">Net Monthly (after fees/cleaning)</span><span class="dr-value" id="r-netMonthlyRev">—</span></div>
         </div>
       </div>
     </div>
