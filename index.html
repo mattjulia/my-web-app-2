@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real Estate Investment Analyzer</title>
+<style>
+  :root {
+    --bg: #0d0d14;
+    --surface: rgba(255,255,255,0.05);
+    --surface-hover: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.1);
+    --text: #e8e8f0;
+    --text-muted: #8888aa;
+    --accent: #a855f7;
+    --accent2: #7c3aed;
+    --accent-glow: rgba(168,85,247,0.25);
+    --green: #22c55e;
+    --green2: #16a34a;
+    --green-glow: rgba(34,197,94,0.25);
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(168,85,247,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124,58,237,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    transition: background var(--transition);
+  }
+  body.rental-mode::before {
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(34,197,94,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(22,163,74,0.06) 0%, transparent 60%);
+  }
+
+  /* ── Layout ── */
+  #app { max-width: 1100px; margin: 0 auto; padding: 20px 16px 80px; }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    padding: 32px 0 24px;
+    position: relative;
+  }
+  .header h1 {
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 700;
+    background: linear-gradient(135deg, #a855f7, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+    transition: background var(--transition);
+  }
+  body.rental-mode .header h1 {
+    background: linear-gradient(135deg, #22c55e, #06b6d4);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  .header p { color: var(--text-muted); font-size: 13px; }
+
+  /* ── Mode Toggle ── */
+  .mode-toggle-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 0 0 28px;
+  }
+  .mode-toggle {
+    display: flex;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 4px;
+    gap: 0;
+    position: relative;
+  }
+  .mode-btn {
+    position: relative;
+    z-index: 1;
+    padding: 10px 28px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: color var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .mode-btn.active { color: #fff; }
+  .mode-slider {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+    box-shadow: 0 0 20px rgba(168,85,247,0.4);
+    transition: left var(--transition), width var(--transition), background var(--transition), box-shadow var(--transition);
+    z-index: 0;
+  }
+  body.rental-mode .mode-slider {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    box-shadow: 0 0 20px rgba(34,197,94,0.4);
+  }
+
+  /* ── Glass Panel ── */
+  .panel {
+    background: var(--surface);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .panel:hover { border-color: rgba(255,255,255,0.15); }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .panel-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 12px var(--accent-glow);
+    transition: background var(--transition), box-shadow var(--transition);
+  }
+  body.rental-mode .panel-icon {
+    background: linear-gradient(135deg, var(--green), var(--green2));
+    box-shadow: 0 0 12px var(--green-glow);
+  }
+  .panel-icon svg { width: 16px; height: 16px; fill: #fff; }
+  .panel-title { font-weight: 700; font-size: 15px; flex: 1; }
+  .panel-chevron {
+    width: 20px;
+    height: 20px;
+    color: var(--text-muted);
+    transition: transform var(--transition);
+    flex-shrink: 0;
+  }
+  .panel.collapsed .panel-chevron { transform: rotate(-90deg); }
+  .panel-summary {
+    display: none;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 2px 8px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .panel.collapsed .panel-summary { display: block; }
+  .panel.collapsed .panel-body { display: none; }
+
+  /* ── Grid ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 640px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 800px) {
+    .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── Form Elements ── */
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .input-wrap { position: relative; }
+  .input-prefix, .input-suffix {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 13px;
+    pointer-events: none;
+    font-weight: 600;
+  }
+  .input-prefix { left: 10px; }
+  .input-suffix { right: 10px; }
+  input[type="number"], input[type="text"], select {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 14px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input[type="number"]:focus, input[type="text"]:focus, select:focus {
+    border-color: var(--accent);
+    background: rgba(168,85,247,0.08);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  body.rental-mode input[type="number"]:focus,
+  body.rental-mode input[type="text"]:focus,
+  body.rental-mode select:focus {
+    border-color: var(--green);
+    background: rgba(34,197,94,0.08);
+    box-shadow: 0 0 0 3px var(--green-glow);
+  }
+  .has-prefix input { padding-left: 26px; }
+  .has-suffix input { padding-right: 30px; }
+  select { cursor: pointer; }
+  option { background: #1a1a2e; }
+
+  /* read-only display value */
+  .display-val {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 14px;
+    color: var(--accent);
+    font-weight: 600;
+    min-height: 38px;
+    transition: color var(--transition);
+  }
+  body.rental-mode .display-val { color: var(--green); }
+
+  /* ── Divider ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  /* ── Sub-toggle ── */
+  .sub-toggle {
+    display: flex;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 3px;
+    margin-bottom: 16px;
+    width: fit-content;
+  }
+  .sub-btn {
+    padding: 7px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition);
+  }
+  .sub-btn.active {
+    background: linear-gradient(135deg, var(--green), var(--green2));
+    color: #fff;
+    box-shadow: 0 0 14px var(--green-glow);
+  }
+
+  /* ── Results ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .metric-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    text-align: center;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .metric-card:hover { border-color: rgba(255,255,255,0.2); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  .metric-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .metric-value {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(135deg, var(--accent), #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: background var(--transition);
+  }
+  body.rental-mode .metric-value {
+    background: linear-gradient(135deg, var(--green), #06b6d4);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  .metric-value.negative {
+    background: linear-gradient(135deg, #ef4444, #f97316);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  .metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  /* ── Cost Breakdown ── */
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+  }
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-label { color: var(--text-muted); }
+  .breakdown-value { font-weight: 600; }
+  .breakdown-value.accent { color: var(--accent); }
+  body.rental-mode .breakdown-value.accent { color: var(--green); }
+  .breakdown-row.total {
+    font-size: 14px;
+    font-weight: 700;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    margin-top: 4px;
+    border-bottom: none;
+  }
+  .breakdown-row.total .breakdown-value { color: var(--accent); font-size: 15px; }
+  body.rental-mode .breakdown-row.total .breakdown-value { color: var(--green); }
+
+  /* ── Bar Chart ── */
+  .bar-chart { margin-top: 12px; }
+  .bar-chart-title { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .bar-stack {
+    height: 36px;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    margin-bottom: 8px;
+  }
+  .bar-segment {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    overflow: hidden;
+    transition: width 0.4s ease;
+    white-space: nowrap;
+    padding: 0 4px;
+  }
+  .bar-legend { display: flex; flex-wrap: wrap; gap: 8px; }
+  .bar-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+  .bar-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ── Rule Checks ── */
+  .rule-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    margin-bottom: 8px;
+  }
+  .rule-icon { font-size: 18px; flex-shrink: 0; }
+  .rule-text { flex: 1; font-size: 13px; }
+  .rule-text strong { display: block; margin-bottom: 2px; }
+  .rule-text span { color: var(--text-muted); font-size: 11px; }
+  .rule-result { font-weight: 700; font-size: 13px; }
+  .rule-check.pass { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05); }
+  .rule-check.fail { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.05); }
+  .rule-check.pass .rule-result { color: var(--green); }
+  .rule-check.fail .rule-result { color: var(--red); }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 14px 0 8px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* ── Comp rows ── */
+  .comp-row { display: grid; grid-template-columns: 2fr 2fr 1fr 2fr; gap: 8px; align-items: end; margin-bottom: 8px; }
+  @media (max-width: 640px) { .comp-row { grid-template-columns: 1fr 1fr; } }
+
+  /* ── Timeline ── */
+  .timeline-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    align-items: end;
+    margin-bottom: 8px;
+  }
+
+  /* ── Floating back-to-top ── */
+  #back-to-top {
+    position: fixed;
+    bottom: 28px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px var(--accent-glow);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity var(--transition), transform var(--transition), background var(--transition), box-shadow var(--transition);
+    z-index: 1000;
+  }
+  #back-to-top.visible { opacity: 1; transform: translateY(0); }
+  body.rental-mode #back-to-top {
+    background: linear-gradient(135deg, var(--green), var(--green2));
+    box-shadow: 0 4px 20px var(--green-glow);
+  }
+  #back-to-top svg { width: 20px; height: 20px; fill: #fff; }
+
+  /* ── Mode sections ── */
+  #flip-section, #rental-section { display: none; }
+  #flip-section.active, #rental-section.active { display: block; }
+
+  /* ── Badge ── */
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 50px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge-purple { background: rgba(168,85,247,0.2); color: #a855f7; border: 1px solid rgba(168,85,247,0.3); }
+  .badge-green { background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+  .badge-red { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+
+  /* ── NOI Table ── */
+  .noi-section { margin-top: 12px; }
+  .noi-group-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 8px 0 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 6px;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+  /* ── Tooltip ── */
+  [data-tip] { position: relative; cursor: help; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e1e2e;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 11px;
+    padding: 5px 9px;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .panel { animation: fadeIn 0.3s ease forwards; }
+
+  /* ── 2-col layout for large screens ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>
+      <svg style="width:28px;height:28px;vertical-align:middle;margin-right:8px;display:inline-block;" viewBox="0 0 24 24" fill="none" stroke="url(#hg)" stroke-width="2">
+        <defs><linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#ec4899"/></linearGradient></defs>
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Real Estate Investment Analyzer
+    </h1>
+    <p>Comprehensive deal analysis for flips &amp; rentals — real-time calculations</p>
+  </div>
+
+  <!-- MODE TOGGLE -->
+  <div class="mode-toggle-wrap">
+    <div class="mode-toggle" id="modeToggle">
+      <div class="mode-slider" id="modeSlider"></div>
+      <button class="mode-btn active" id="btnFlip" onclick="setMode('flip')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Flip / Resale
+      </button>
+      <button class="mode-btn" id="btnRental" onclick="setMode('rental')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Rental / Hold
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ FLIP MODE ═══════════════════ -->
+  <div id="flip-section" class="active">
+
+    <!-- SHARED PANELS (flip — always expanded) -->
+    <div id="fp-property" class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        </div>
+        <span class="panel-title">Property Details</span>
+        <span class="badge badge-purple">Shared</span>
+      </div>
+      <div class="panel-body">
+        <div class="grid-3">
+          <div class="field">
+            <label>Purchase Price</label>
+            <div class="input-wrap has-prefix">
+              <span class="input-prefix">$</span>
+              <input type="number" id="f-purchasePrice" value="300000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Closing Costs (Buy)</label>
+            <div class="input-wrap has-prefix">
+              <span class="input-prefix">$</span>
+              <input type="number" id="f-closingCosts" value="4500" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Sq Ft</label>
+            <div class="input-wrap">
+              <input type="number" id="f-sqft" value="1800" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Lot Size (sqft)</label>
+            <div class="input-wrap">
+              <input type="number" id="f-lotSize" value="6000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Bedrooms</label>
+            <div class="input-wrap">
+              <input type="number" id="f-bedrooms" value="3" oninput="calc()">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="fp-comps" class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+        <span class="panel-title">Comparable Sales (Comps)</span>
+        <span class="badge badge-purple">Shared</span>
+      </div>
+      <div class="panel-body">
+        <div style="display:grid;grid-template-columns:2fr 2fr 1.2fr 2fr;gap:8px;margin-bottom:6px;">
+          <label>Sale Price</label><label>Sq Ft</label><label>$/Sq Ft</label><label>Implied ARV</label>
+        </div>
+        <div class="comp-row">
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span><input type="number" id="f-c1p" value="380000" oninput="calc()"></div>
+          <div class="input-wrap"><input type="number" id="f-c1s" value="1900" oninput="calc()"></div>
+          <div class="display-val" id="f-c1psf">—</div>
+          <div class="display-val" id="f-c1arv">—</div>
+        </div>
+        <div class="comp-row">
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span><input type="number" id="f-c2p" value="360000" oninput="calc()"></div>
+          <div class="input-wrap"><input type="number" id="f-c2s" value="1850" oninput="calc()"></div>
+          <div class="display-val" id="f-c2psf">—</div>
+          <div class="display-val" id="f-c2arv">—</div>
+        </div>
+        <div class="comp-row">
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span><input type="number" id="f-c3p" value="395000" oninput="calc()"></div>
+          <div class="input-wrap"><input type="number" id="f-c3s" value="1950" oninput="calc()"></div>
+          <div class="display-val" id="f-c3psf">—</div>
+          <div class="display-val" id="f-c3arv">—</div>
+        </div>
+        <div class="divider"></div>
+        <div class="grid-3">
+          <div class="field"><label>Avg $/Sq Ft</label><div class="display-val" id="f-avgPsf">—</div></div>
+          <div class="field"><label>Blended ARV</label><div class="display-val" id="f-blendedArv">—</div></div>
+          <div class="field"><label>Subject ARV (Avg $/sqft × Your Sqft)</label><div class="display-val" id="f-subjectArv">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="fp-build" class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-2-2a1 1 0 010-1.4l8-8a1 1 0 011.4 0l2 2zM20 4l-2-2-2 2 2 2 2-2zm-9 9l-2 2 2 2 2-2-2-2z"/></svg>
+        </div>
+        <span class="panel-title">Build / Rehab Costs</span>
+        <span class="badge badge-purple">Shared</span>
+      </div>
+      <div class="panel-body">
+        <div class="grid-3">
+          <div class="field">
+            <label>Hard Costs</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="f-hardCosts" value="60000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Soft Costs</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="f-softCosts" value="8000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Contingency %</label>
+            <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+              <input type="number" id="f-contingency" value="10" oninput="calc()">
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="grid-2">
+          <div class="field"><label>Contingency Reserve</label><div class="display-val" id="f-contingencyAmt">—</div></div>
+          <div class="field"><label>Total Rehab</label><div class="display-val" id="f-totalRehab">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="fp-capital" class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <span class="panel-title">Capital Structure</span>
+        <span class="badge badge-purple">Shared</span>
+      </div>
+      <div class="panel-body">
+        <div class="grid-3">
+          <div class="field">
+            <label>Equity (Down Payment)</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="f-equity" value="90000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Debt (Loan Amount)</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="f-debt" value="210000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Interest Rate</label>
+            <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+              <input type="number" id="f-interestRate" value="12" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Origination Fee</label>
+            <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+              <input type="number" id="f-origFee" value="2" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Loan Term (months)</label>
+            <div class="input-wrap">
+              <input type="number" id="f-loanTerm" value="12" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Total Invested (Equity + Fees)</label>
+            <div class="display-val" id="f-totalInvested">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="fp-timeline" class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <span class="panel-title">Construction Timeline &amp; Carry</span>
+        <span class="badge badge-purple">Shared</span>
+      </div>
+      <div class="panel-body">
+        <div class="grid-3">
+          <div class="field">
+            <label>Construction (months)</label>
+            <div class="input-wrap">
+              <input type="number" id="f-constructionMonths" value="4" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Monthly Property Tax</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="f-monthlyTax" value="350" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Monthly Insurance</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="f-monthlyIns" value="150" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Monthly Utilities</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="f-monthlyUtil" value="200" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Other Monthly Carry</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="f-monthlyOther" value="100" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Total Carry Costs</label>
+            <div class="display-val" id="f-totalCarry">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLIP-SPECIFIC: Sale Costs -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <span class="panel-title">Sale Costs</span>
+        <span class="badge badge-purple">Flip Only</span>
+      </div>
+      <div class="panel-body">
+        <div class="grid-3">
+          <div class="field">
+            <label>Agent Commission</label>
+            <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+              <input type="number" id="f-commission" value="6" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Seller Closing Costs</label>
+            <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+              <input type="number" id="f-sellerClosing" value="1" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Staging / Marketing</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="f-staging" value="3000" oninput="calc()">
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="grid-3">
+          <div class="field"><label>Commission $</label><div class="display-val" id="f-commissionAmt">—</div></div>
+          <div class="field"><label>Closing $</label><div class="display-val" id="f-closingAmt">—</div></div>
+          <div class="field"><label>Total Sale Costs</label><div class="display-val" id="f-totalSaleCosts">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLIP RESULTS -->
+    <div class="panel" style="border-color:rgba(168,85,247,0.3);">
+      <div class="panel-header" style="cursor:default;">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <span class="panel-title">Flip Analysis Results</span>
+        <span id="f-profitBadge" class="badge badge-purple">Calculating…</span>
+      </div>
+      <div class="panel-body">
+        <div class="results-grid" id="f-resultsGrid"></div>
+        <div class="divider"></div>
+        <div class="two-col">
+          <div>
+            <div class="section-label">Cost Breakdown</div>
+            <div id="f-costBreakdown"></div>
+          </div>
+          <div>
+            <div class="section-label">ARV Composition</div>
+            <div class="bar-chart">
+              <div class="bar-stack" id="f-barStack"></div>
+              <div class="bar-legend" id="f-barLegend"></div>
+            </div>
+            <div class="divider"></div>
+            <div class="section-label">Rule Checks</div>
+            <div id="f-ruleChecks"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /flip-section -->
+
+
+  <!-- ═══════════════════ RENTAL MODE ═══════════════════ -->
+  <div id="rental-section">
+
+    <!-- SHARED PANELS (rental — collapsible) -->
+    <div id="rp-property" class="panel">
+      <div class="panel-header" onclick="togglePanel('rp-property')">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        </div>
+        <span class="panel-title">Property Details</span>
+        <span class="panel-summary" id="rp-property-summary"></span>
+        <svg class="panel-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="panel-body">
+        <div class="grid-3">
+          <div class="field">
+            <label>Purchase Price</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-purchasePrice" value="300000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Closing Costs (Buy)</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-closingCosts" value="4500" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Sq Ft</label>
+            <div class="input-wrap">
+              <input type="number" id="r-sqft" value="1800" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Lot Size (sqft)</label>
+            <div class="input-wrap">
+              <input type="number" id="r-lotSize" value="6000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Bedrooms</label>
+            <div class="input-wrap">
+              <input type="number" id="r-bedrooms" value="3" oninput="calc()">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="rp-comps" class="panel">
+      <div class="panel-header" onclick="togglePanel('rp-comps')">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+        <span class="panel-title">Comparable Sales</span>
+        <span class="panel-summary" id="rp-comps-summary"></span>
+        <svg class="panel-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="panel-body">
+        <div style="display:grid;grid-template-columns:2fr 2fr 1.2fr 2fr;gap:8px;margin-bottom:6px;">
+          <label>Sale Price</label><label>Sq Ft</label><label>$/Sq Ft</label><label>Implied ARV</label>
+        </div>
+        <div class="comp-row">
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span><input type="number" id="r-c1p" value="380000" oninput="calc()"></div>
+          <div class="input-wrap"><input type="number" id="r-c1s" value="1900" oninput="calc()"></div>
+          <div class="display-val" id="r-c1psf">—</div>
+          <div class="display-val" id="r-c1arv">—</div>
+        </div>
+        <div class="comp-row">
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span><input type="number" id="r-c2p" value="360000" oninput="calc()"></div>
+          <div class="input-wrap"><input type="number" id="r-c2s" value="1850" oninput="calc()"></div>
+          <div class="display-val" id="r-c2psf">—</div>
+          <div class="display-val" id="r-c2arv">—</div>
+        </div>
+        <div class="comp-row">
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span><input type="number" id="r-c3p" value="395000" oninput="calc()"></div>
+          <div class="input-wrap"><input type="number" id="r-c3s" value="1950" oninput="calc()"></div>
+          <div class="display-val" id="r-c3psf">—</div>
+          <div class="display-val" id="r-c3arv">—</div>
+        </div>
+        <div class="divider"></div>
+        <div class="grid-3">
+          <div class="field"><label>Avg $/Sq Ft</label><div class="display-val" id="r-avgPsf">—</div></div>
+          <div class="field"><label>Blended ARV</label><div class="display-val" id="r-blendedArv">—</div></div>
+          <div class="field"><label>Subject ARV</label><div class="display-val" id="r-subjectArv">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="rp-build" class="panel">
+      <div class="panel-header" onclick="togglePanel('rp-build')">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-2-2a1 1 0 010-1.4l8-8a1 1 0 011.4 0l2 2zM20 4l-2-2-2 2 2 2 2-2zm-9 9l-2 2 2 2 2-2-2-2z"/></svg>
+        </div>
+        <span class="panel-title">Build / Rehab Costs</span>
+        <span class="panel-summary" id="rp-build-summary"></span>
+        <svg class="panel-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="panel-body">
+        <div class="grid-3">
+          <div class="field">
+            <label>Hard Costs</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-hardCosts" value="60000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Soft Costs</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-softCosts" value="8000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Contingency %</label>
+            <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+              <input type="number" id="r-contingency" value="10" oninput="calc()">
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="grid-2">
+          <div class="field"><label>Contingency Reserve</label><div class="display-val" id="r-contingencyAmt">—</div></div>
+          <div class="field"><label>Total Rehab</label><div class="display-val" id="r-totalRehab">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="rp-capital" class="panel">
+      <div class="panel-header" onclick="togglePanel('rp-capital')">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <span class="panel-title">Capital Structure</span>
+        <span class="panel-summary" id="rp-capital-summary"></span>
+        <svg class="panel-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="panel-body">
+        <div class="grid-3">
+          <div class="field">
+            <label>Equity (Down Payment)</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-equity" value="90000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Debt (Loan Amount)</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-debt" value="210000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Interest Rate</label>
+            <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+              <input type="number" id="r-interestRate" value="12" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Origination Fee</label>
+            <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+              <input type="number" id="r-origFee" value="2" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Loan Term (months)</label>
+            <div class="input-wrap">
+              <input type="number" id="r-loanTerm" value="12" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Total Invested</label>
+            <div class="display-val" id="r-totalInvested">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="rp-timeline" class="panel">
+      <div class="panel-header" onclick="togglePanel('rp-timeline')">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <span class="panel-title">Construction Timeline &amp; Carry</span>
+        <span class="panel-summary" id="rp-timeline-summary"></span>
+        <svg class="panel-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="panel-body">
+        <div class="grid-3">
+          <div class="field">
+            <label>Construction (months)</label>
+            <div class="input-wrap">
+              <input type="number" id="r-constructionMonths" value="4" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Monthly Property Tax</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-monthlyTax" value="350" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Monthly Insurance</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-monthlyIns" value="150" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Monthly Utilities</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-monthlyUtil" value="200" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Other Monthly Carry</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-monthlyOther" value="100" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Total Carry Costs</label>
+            <div class="display-val" id="r-totalCarry">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RENTAL TYPE SUB-TOGGLE -->
+    <div class="panel" style="border-color:rgba(34,197,94,0.2);">
+      <div class="panel-header" style="cursor:default;margin-bottom:8px;">
+        <div class="panel-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 0 12px rgba(34,197,94,0.25);">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <span class="panel-title">Rental Income</span>
+      </div>
+      <div class="panel-body">
+        <div class="sub-toggle">
+          <button class="sub-btn active" id="btnLT" onclick="setRentalType('lt')" aria-label="Long-Term rental">📋 Long-Term</button>
+          <button class="sub-btn" id="btnST" onclick="setRentalType('st')" aria-label="Short-Term / Airbnb rental">✈️ Short-Term / Airbnb</button>
+        </div>
+
+        <!-- LONG-TERM -->
+        <div id="lt-section">
+          <div class="grid-3">
+            <div class="field">
+              <label>Monthly Rent</label>
+              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+                <input type="number" id="r-monthlyRent" value="2200" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Vacancy Rate</label>
+              <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+                <input type="number" id="r-vacancy" value="5" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Other Monthly Income</label>
+              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+                <input type="number" id="r-otherIncome" value="0" oninput="calc()">
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="grid-2">
+            <div class="field"><label>Effective Monthly Income</label><div class="display-val" id="r-effectiveIncome">—</div></div>
+            <div class="field"><label>Annual Gross Income</label><div class="display-val" id="r-annualIncome">—</div></div>
+          </div>
+        </div>
+
+        <!-- SHORT-TERM -->
+        <div id="st-section" style="display:none;">
+          <div class="grid-3">
+            <div class="field">
+              <label>Nightly Rate</label>
+              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+                <input type="number" id="r-nightlyRate" value="180" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Occupancy Rate</label>
+              <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+                <input type="number" id="r-occupancy" value="70" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Avg Stay (nights)</label>
+              <div class="input-wrap">
+                <input type="number" id="r-avgStay" value="3" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Cleaning Fee / Stay</label>
+              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+                <input type="number" id="r-cleaningFee" value="75" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Platform Fee</label>
+              <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+                <input type="number" id="r-platformFee" value="3" oninput="calc()">
+              </div>
+            </div>
+            <div class="field">
+              <label>Furnishing Cost</label>
+              <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+                <input type="number" id="r-furnishing" value="15000" oninput="calc()">
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="grid-3">
+            <div class="field"><label>Est. Nights Booked/Year</label><div class="display-val" id="r-nightsBooked">—</div></div>
+            <div class="field"><label>Gross Annual Revenue</label><div class="display-val" id="r-grossRevenue">—</div></div>
+            <div class="field"><label>Net Annual Revenue</label><div class="display-val" id="r-netRevenue">—</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONTHLY OPERATING EXPENSES -->
+    <div class="panel">
+      <div class="panel-header" style="cursor:default;">
+        <div class="panel-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 0 12px rgba(34,197,94,0.25);">
+          <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <span class="panel-title">Monthly Operating Expenses</span>
+      </div>
+      <div class="panel-body">
+        <div class="grid-4">
+          <div class="field">
+            <label>Property Tax / mo</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-opTax" value="350" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Insurance / mo</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-opIns" value="150" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Maintenance / mo</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-opMaint" value="200" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>CapEx / mo</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-opCapex" value="150" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Utilities / mo</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-opUtil" value="100" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>HOA / mo</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-opHoa" value="0" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Mgmt Fee</label>
+            <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+              <input type="number" id="r-opMgmt" value="10" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Total Op Expenses / mo</label>
+            <div class="display-val" id="r-totalOpEx">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERMANENT MORTGAGE -->
+    <div class="panel">
+      <div class="panel-header" style="cursor:default;">
+        <div class="panel-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 0 12px rgba(34,197,94,0.25);">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><line x1="9" y1="22" x2="9" y2="12"/><line x1="15" y1="22" x2="15" y2="12"/></svg>
+        </div>
+        <span class="panel-title">Permanent Mortgage</span>
+      </div>
+      <div class="panel-body">
+        <div class="grid-4">
+          <div class="field">
+            <label>Loan Amount</label>
+            <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+              <input type="number" id="r-mortgageAmt" value="240000" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Interest Rate</label>
+            <div class="input-wrap has-suffix"><span class="input-suffix">%</span>
+              <input type="number" id="r-mortgageRate" value="6.5" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Loan Term (years)</label>
+            <div class="input-wrap">
+              <input type="number" id="r-mortgageTerm" value="30" oninput="calc()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Monthly Payment (P&amp;I)</label>
+            <div class="display-val" id="r-mortgagePayment">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RENTAL RESULTS -->
+    <div class="panel" style="border-color:rgba(34,197,94,0.3);">
+      <div class="panel-header" style="cursor:default;">
+        <div class="panel-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 0 12px rgba(34,197,94,0.25);">
+          <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <span class="panel-title">Rental Analysis Results</span>
+        <span id="r-cashflowBadge" class="badge badge-green">Calculating…</span>
+      </div>
+      <div class="panel-body">
+        <div class="results-grid" id="r-resultsGrid"></div>
+        <div class="divider"></div>
+        <div class="two-col">
+          <div>
+            <div class="section-label">NOI Breakdown</div>
+            <div class="noi-section" id="r-noiBreakdown"></div>
+          </div>
+          <div>
+            <div class="section-label">Rule Checks</div>
+            <div id="r-ruleChecks"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /rental-section -->
+
+</div><!-- /app -->
+
+<!-- BACK TO TOP -->
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">
+  <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── State ──
+  let currentMode = 'flip';
+  let rentalType = 'lt';
+
+  // ── Helpers ──
+  const $ = id => document.getElementById(id);
+  const v = id => { const el = $(id); return el ? (parseFloat(el.value) || 0) : 0; };
+  const fmt = n => n == null ? '—' : '$' + Math.round(n).toLocaleString();
+  const fmtDec = (n, d=1) => n == null ? '—' : '$' + n.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const pct = n => n == null ? '—' : n.toFixed(2) + '%';
+  const num = n => n == null ? '—' : n.toLocaleString();
+  const setText = (id, val) => { const el = $(id); if(el) el.textContent = val; };
+
+  // ── Mode toggle ──
+  window.setMode = function(mode) {
+    currentMode = mode;
+    const isRental = mode === 'rental';
+    document.body.classList.toggle('rental-mode', isRental);
+    $('flip-section').classList.toggle('active', !isRental);
+    $('rental-section').classList.toggle('active', isRental);
+    $('btnFlip').classList.toggle('active', !isRental);
+    $('btnRental').classList.toggle('active', isRental);
+    positionSlider();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    calc();
+  };
+
+  function positionSlider() {
+    const slider = $('modeSlider');
+    const btn = currentMode === 'flip' ? $('btnFlip') : $('btnRental');
+    const toggle = $('modeToggle');
+    const toggleRect = toggle.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    slider.style.left = (btnRect.left - toggleRect.left) + 'px';
+    slider.style.width = btnRect.width + 'px';
+  }
+
+  // ── Rental type sub-toggle ──
+  window.setRentalType = function(type) {
+    rentalType = type;
+    $('btnLT').classList.toggle('active', type === 'lt');
+    $('btnST').classList.toggle('active', type === 'st');
+    $('lt-section').style.display = type === 'lt' ? '' : 'none';
+    $('st-section').style.display = type === 'st' ? '' : 'none';
+    calc();
+  };
+
+  // ── Collapsible panels ──
+  window.togglePanel = function(id) {
+    $(id).classList.toggle('collapsed');
+    calc();
+  };
+
+  // ── Back to top ──
+  window.addEventListener('scroll', () => {
+    $('back-to-top').classList.toggle('visible', window.scrollY > 300);
+  });
+
+  // ── Calculations ──
+  window.calc = function() {
+    if (currentMode === 'flip') calcFlip();
+    else calcRental();
+  };
+
+  // ── FLIP CALCULATIONS ──
+  function calcFlip() {
+    const pp = v('f-purchasePrice');
+    const cc = v('f-closingCosts');
+    const sqft = v('f-sqft');
+    const hard = v('f-hardCosts');
+    const soft = v('f-softCosts');
+    const contingPct = v('f-contingency');
+    const equity = v('f-equity');
+    const debt = v('f-debt');
+    const intRate = v('f-interestRate');
+    const origFee = v('f-origFee');
+    const loanTerm = v('f-loanTerm');
+    const conMonths = v('f-constructionMonths');
+    const mTax = v('f-monthlyTax');
+    const mIns = v('f-monthlyIns');
+    const mUtil = v('f-monthlyUtil');
+    const mOther = v('f-monthlyOther');
+    const commPct = v('f-commission');
+    const sellerClosePct = v('f-sellerClosing');
+    const staging = v('f-staging');
+
+    // Comps
+    const comps = [
+      { p: v('f-c1p'), s: v('f-c1s'), psfId: 'f-c1psf', arvId: 'f-c1arv' },
+      { p: v('f-c2p'), s: v('f-c2s'), psfId: 'f-c2psf', arvId: 'f-c2arv' },
+      { p: v('f-c3p'), s: v('f-c3s'), psfId: 'f-c3psf', arvId: 'f-c3arv' },
+    ];
+    let psfTotal = 0, arvTotal = 0, validComps = 0;
+    comps.forEach(c => {
+      const psf = c.s > 0 ? c.p / c.s : 0;
+      const arv = psf > 0 ? psf * sqft : 0;
+      setText(c.psfId, psf > 0 ? fmtDec(psf, 2) : '—');
+      setText(c.arvId, arv > 0 ? fmt(arv) : '—');
+      if (psf > 0) { psfTotal += psf; arvTotal += c.p; validComps++; }
+    });
+    const avgPsf = validComps > 0 ? psfTotal / validComps : 0;
+    const blendedArv = validComps > 0 ? arvTotal / validComps : 0;
+    const subjectArv = avgPsf * sqft;
+    setText('f-avgPsf', avgPsf > 0 ? fmtDec(avgPsf, 2) : '—');
+    setText('f-blendedArv', blendedArv > 0 ? fmt(blendedArv) : '—');
+    setText('f-subjectArv', subjectArv > 0 ? fmt(subjectArv) : '—');
+
+    const arv = subjectArv > 0 ? subjectArv : blendedArv;
+
+    // Rehab
+    const baseRehab = hard + soft;
+    const contingAmt = baseRehab * contingPct / 100;
+    const totalRehab = baseRehab + contingAmt;
+    setText('f-contingencyAmt', fmt(contingAmt));
+    setText('f-totalRehab', fmt(totalRehab));
+
+    // Capital
+    const origFeeAmt = debt * origFee / 100;
+    const totalInvested = equity + origFeeAmt + cc;
+    setText('f-totalInvested', fmt(totalInvested));
+
+    // Carry
+    const monthlyHold = (debt * intRate / 100 / 12) + mTax + mIns + mUtil + mOther;
+    const totalCarry = monthlyHold * loanTerm + origFeeAmt;
+    setText('f-totalCarry', fmt(totalCarry));
+
+    // Sale costs
+    const commAmt = arv * commPct / 100;
+    const closingAmt = arv * sellerClosePct / 100;
+    const totalSaleCosts = commAmt + closingAmt + staging;
+    setText('f-commissionAmt', fmt(commAmt));
+    setText('f-closingAmt', fmt(closingAmt));
+    setText('f-totalSaleCosts', fmt(totalSaleCosts));
+
+    // Totals
+    const totalCosts = pp + cc + totalRehab + totalCarry + totalSaleCosts;
+    const netProfit = arv - totalCosts;
+    const roi = totalCosts > 0 ? netProfit / totalCosts * 100 : 0;
+    const coc = totalInvested > 0 ? netProfit / totalInvested * 100 : 0;
+    const holdMonths = loanTerm > 0 ? loanTerm : conMonths;
+    const annualizedRoi = holdMonths > 0 ? roi / holdMonths * 12 : roi;
+    const profitMargin = arv > 0 ? netProfit / arv * 100 : 0;
+
+    // Badge
+    const badge = $('f-profitBadge');
+    badge.className = 'badge ' + (netProfit >= 0 ? 'badge-purple' : 'badge-red');
+    badge.textContent = netProfit >= 0 ? '✓ Profitable' : '✗ Loss';
+
+    // Results grid
+    $('f-resultsGrid').innerHTML = `
+      <div class="metric-card">
+        <div class="metric-label">Net Profit</div>
+        <div class="metric-value ${netProfit < 0 ? 'negative' : ''}">${fmt(netProfit)}</div>
+        <div class="metric-sub">After all costs</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">ROI</div>
+        <div class="metric-value ${roi < 0 ? 'negative' : ''}">${pct(roi)}</div>
+        <div class="metric-sub">Return on total cost</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Cash-on-Cash</div>
+        <div class="metric-value ${coc < 0 ? 'negative' : ''}">${pct(coc)}</div>
+        <div class="metric-sub">Return on equity</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Annualized ROI</div>
+        <div class="metric-value ${annualizedRoi < 0 ? 'negative' : ''}">${pct(annualizedRoi)}</div>
+        <div class="metric-sub">${holdMonths} month hold</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Profit Margin</div>
+        <div class="metric-value ${profitMargin < 0 ? 'negative' : ''}">${pct(profitMargin)}</div>
+        <div class="metric-sub">% of ARV</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">ARV</div>
+        <div class="metric-value">${fmt(arv)}</div>
+        <div class="metric-sub">After Repair Value</div>
+      </div>
+    `;
+
+    // Cost breakdown
+    $('f-costBreakdown').innerHTML = `
+      <div class="breakdown-row"><span class="breakdown-label">Purchase Price</span><span class="breakdown-value">${fmt(pp)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Buy Closing Costs</span><span class="breakdown-value">${fmt(cc)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Hard Costs</span><span class="breakdown-value">${fmt(hard)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Soft Costs</span><span class="breakdown-value">${fmt(soft)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Contingency Reserve</span><span class="breakdown-value">${fmt(contingAmt)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Carry Costs (${holdMonths}mo)</span><span class="breakdown-value">${fmt(totalCarry)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Agent Commission</span><span class="breakdown-value">${fmt(commAmt)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Seller Closing Costs</span><span class="breakdown-value">${fmt(closingAmt)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Staging / Marketing</span><span class="breakdown-value">${fmt(staging)}</span></div>
+      <div class="breakdown-row total"><span class="breakdown-label">Total All-In Cost</span><span class="breakdown-value accent">${fmt(totalCosts)}</span></div>
+    `;
+
+    // Bar chart — ARV composition
+    const segments = [
+      { label: 'Purchase', val: pp, color: '#a855f7' },
+      { label: 'Rehab', val: totalRehab, color: '#7c3aed' },
+      { label: 'Carry', val: totalCarry, color: '#ec4899' },
+      { label: 'Sale Costs', val: totalSaleCosts, color: '#f97316' },
+      { label: 'Profit', val: Math.max(0, netProfit), color: '#22c55e' },
+    ];
+    const total = segments.reduce((s, x) => s + x.val, 0);
+    $('f-barStack').innerHTML = segments.map(seg => {
+      const w = total > 0 ? (seg.val / total * 100).toFixed(1) : 0;
+      return `<div class="bar-segment" style="width:${w}%;background:${seg.color};" title="${seg.label}: ${fmt(seg.val)}">${w > 8 ? seg.label : ''}</div>`;
+    }).join('');
+    $('f-barLegend').innerHTML = segments.map(seg =>
+      `<div class="bar-legend-item"><div class="bar-legend-dot" style="background:${seg.color}"></div>${seg.label}: ${fmt(seg.val)}</div>`
+    ).join('');
+
+    // 70% Rule
+    const rule70 = arv * 0.7 - totalRehab;
+    const rule70Pass = pp <= rule70;
+    $('f-ruleChecks').innerHTML = `
+      <div class="rule-check ${rule70Pass ? 'pass' : 'fail'}">
+        <span class="rule-icon">${rule70Pass ? '✅' : '❌'}</span>
+        <div class="rule-text">
+          <strong>70% Rule</strong>
+          <span>Max buy price: ${fmt(rule70)} (70% of ARV − rehab)</span>
+        </div>
+        <span class="rule-result">${rule70Pass ? 'PASS' : 'FAIL'}</span>
+      </div>
+      <div class="rule-check ${netProfit >= 20000 ? 'pass' : 'fail'}">
+        <span class="rule-icon">${netProfit >= 20000 ? '✅' : '⚠️'}</span>
+        <div class="rule-text">
+          <strong>Min Profit ($20K)</strong>
+          <span>Net profit should exceed $20,000 minimum</span>
+        </div>
+        <span class="rule-result">${netProfit >= 20000 ? 'PASS' : 'CHECK'}</span>
+      </div>
+    `;
+  }
+
+  // ── RENTAL CALCULATIONS ──
+  function calcRental() {
+    // Shared values
+    const pp = v('r-purchasePrice');
+    const cc = v('r-closingCosts');
+    const sqft = v('r-sqft');
+    const hard = v('r-hardCosts');
+    const soft = v('r-softCosts');
+    const contingPct = v('r-contingency');
+    const equity = v('r-equity');
+    const debt = v('r-debt');
+    const intRate = v('r-interestRate');
+    const origFee = v('r-origFee');
+    const loanTerm = v('r-loanTerm');
+    const conMonths = v('r-constructionMonths');
+    const mTax = v('r-monthlyTax');
+    const mIns = v('r-monthlyIns');
+    const mUtil = v('r-monthlyUtil');
+    const mOther = v('r-monthlyOther');
+
+    // Comps
+    const comps = [
+      { p: v('r-c1p'), s: v('r-c1s'), psfId: 'r-c1psf', arvId: 'r-c1arv' },
+      { p: v('r-c2p'), s: v('r-c2s'), psfId: 'r-c2psf', arvId: 'r-c2arv' },
+      { p: v('r-c3p'), s: v('r-c3s'), psfId: 'r-c3psf', arvId: 'r-c3arv' },
+    ];
+    let psfTotal = 0, arvTotal = 0, validComps = 0;
+    comps.forEach(c => {
+      const psf = c.s > 0 ? c.p / c.s : 0;
+      const arv = psf > 0 ? psf * sqft : 0;
+      setText(c.psfId, psf > 0 ? fmtDec(psf, 2) : '—');
+      setText(c.arvId, arv > 0 ? fmt(arv) : '—');
+      if (psf > 0) { psfTotal += psf; arvTotal += c.p; validComps++; }
+    });
+    const avgPsf = validComps > 0 ? psfTotal / validComps : 0;
+    const blendedArv = validComps > 0 ? arvTotal / validComps : 0;
+    const subjectArv = avgPsf * sqft;
+    setText('r-avgPsf', avgPsf > 0 ? fmtDec(avgPsf, 2) : '—');
+    setText('r-blendedArv', blendedArv > 0 ? fmt(blendedArv) : '—');
+    setText('r-subjectArv', subjectArv > 0 ? fmt(subjectArv) : '—');
+
+    // Rehab
+    const baseRehab = hard + soft;
+    const contingAmt = baseRehab * contingPct / 100;
+    const totalRehab = baseRehab + contingAmt;
+    setText('r-contingencyAmt', fmt(contingAmt));
+    setText('r-totalRehab', fmt(totalRehab));
+
+    // Capital
+    const origFeeAmt = debt * origFee / 100;
+    const totalInvested = equity + origFeeAmt + cc;
+    setText('r-totalInvested', fmt(totalInvested));
+
+    // Carry (construction hold)
+    const monthlyInterest = debt * intRate / 100 / 12;
+    const monthlyCarryBase = monthlyInterest + mTax + mIns + mUtil + mOther;
+    const totalCarry = monthlyCarryBase * (loanTerm || conMonths) + origFeeAmt;
+    setText('r-totalCarry', fmt(totalCarry));
+
+    // Total acquisition cost (all-in basis)
+    const allInCost = pp + cc + totalRehab + totalCarry;
+
+    // Mortgage
+    const mortAmt = v('r-mortgageAmt');
+    const mortRate = v('r-mortgageRate') / 100 / 12;
+    const mortTerm = v('r-mortgageTerm') * 12;
+    let mortPayment = 0;
+    if (mortRate > 0 && mortTerm > 0 && mortAmt > 0) {
+      const compoundFactor = Math.pow(1 + mortRate, mortTerm);
+      mortPayment = mortAmt * mortRate * compoundFactor / (compoundFactor - 1);
+    }
+    setText('r-mortgagePayment', fmtDec(mortPayment, 2));
+
+    // Operating expenses
+    const opTax = v('r-opTax');
+    const opIns = v('r-opIns');
+    const opMaint = v('r-opMaint');
+    const opCapex = v('r-opCapex');
+    const opUtil = v('r-opUtil');
+    const opHoa = v('r-opHoa');
+    const opMgmtPct = v('r-opMgmt');
+
+    // Income
+    let effectiveMonthlyIncome = 0;
+    let annualGrossIncome = 0;
+    let furnishing = 0;
+
+    if (rentalType === 'lt') {
+      const monthlyRent = v('r-monthlyRent');
+      const vacancy = v('r-vacancy') / 100;
+      const otherIncome = v('r-otherIncome');
+      const effectiveIncome = monthlyRent * (1 - vacancy) + otherIncome;
+      effectiveMonthlyIncome = effectiveIncome;
+      annualGrossIncome = monthlyRent * 12;
+      setText('r-effectiveIncome', fmtDec(effectiveIncome, 2));
+      setText('r-annualIncome', fmt(annualGrossIncome));
+    } else {
+      const nightlyRate = v('r-nightlyRate');
+      const occupancy = v('r-occupancy') / 100;
+      const avgStay = v('r-avgStay') || 3;
+      const cleaningFee = v('r-cleaningFee');
+      const platformFeePct = v('r-platformFee') / 100;
+      furnishing = v('r-furnishing');
+      const nightsBooked = Math.round(365 * occupancy);
+      const numStays = avgStay > 0 ? nightsBooked / avgStay : 0;
+      const grossRev = nightlyRate * nightsBooked + cleaningFee * numStays;
+      const platformCut = grossRev * platformFeePct;
+      const netRev = grossRev - platformCut;
+      effectiveMonthlyIncome = netRev / 12;
+      annualGrossIncome = netRev;
+      setText('r-nightsBooked', num(nightsBooked));
+      setText('r-grossRevenue', fmt(grossRev));
+      setText('r-netRevenue', fmt(netRev));
+    }
+
+    const opMgmtAmt = effectiveMonthlyIncome * opMgmtPct / 100;
+    const totalOpExFixed = opTax + opIns + opMaint + opCapex + opUtil + opHoa;
+    const totalOpEx = totalOpExFixed + opMgmtAmt;
+    setText('r-totalOpEx', fmtDec(totalOpEx, 2));
+
+    // NOI
+    const annualNOI = (effectiveMonthlyIncome - totalOpEx) * 12;
+    const monthlyNOI = effectiveMonthlyIncome - totalOpEx;
+
+    // Cash flow
+    const monthlyCF = monthlyNOI - mortPayment;
+    const annualCF = monthlyCF * 12;
+
+    // Metrics
+    const totalEquityIn = equity + origFeeAmt + cc + furnishing;
+    const cocReturn = totalEquityIn > 0 ? annualCF / totalEquityIn * 100 : 0;
+    const capRate = allInCost > 0 ? annualNOI / allInCost * 100 : 0;
+    const dscr = mortPayment > 0 ? monthlyNOI / mortPayment : null;
+
+    // Badge
+    const badge = $('r-cashflowBadge');
+    badge.className = 'badge ' + (monthlyCF >= 0 ? 'badge-green' : 'badge-red');
+    badge.textContent = monthlyCF >= 0 ? '✓ Positive Cash Flow' : '✗ Negative Cash Flow';
+
+    // Results
+    $('r-resultsGrid').innerHTML = `
+      <div class="metric-card">
+        <div class="metric-label">Monthly Cash Flow</div>
+        <div class="metric-value ${monthlyCF < 0 ? 'negative' : ''}">${fmtDec(monthlyCF, 0)}</div>
+        <div class="metric-sub">After mortgage &amp; expenses</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Annual Cash Flow</div>
+        <div class="metric-value ${annualCF < 0 ? 'negative' : ''}">${fmt(annualCF)}</div>
+        <div class="metric-sub">Per year</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Cash-on-Cash</div>
+        <div class="metric-value ${cocReturn < 0 ? 'negative' : ''}">${pct(cocReturn)}</div>
+        <div class="metric-sub">Annual CF / Equity in</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Cap Rate</div>
+        <div class="metric-value ${capRate < 0 ? 'negative' : ''}">${pct(capRate)}</div>
+        <div class="metric-sub">NOI / All-in Cost</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">DSCR</div>
+        <div class="metric-value ${dscr !== null && dscr < 1 ? 'negative' : ''}">${dscr !== null ? dscr.toFixed(2) + 'x' : 'N/A'}</div>
+        <div class="metric-sub">NOI / Debt Service</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Annual NOI</div>
+        <div class="metric-value ${annualNOI < 0 ? 'negative' : ''}">${fmt(annualNOI)}</div>
+        <div class="metric-sub">Net Operating Income</div>
+      </div>
+    `;
+
+    // NOI breakdown
+    $('r-noiBreakdown').innerHTML = `
+      <div class="noi-group-title">Income</div>
+      <div class="breakdown-row"><span class="breakdown-label">Effective Monthly Income</span><span class="breakdown-value">${fmtDec(effectiveMonthlyIncome, 2)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Annualized Income</span><span class="breakdown-value">${fmt(effectiveMonthlyIncome * 12)}</span></div>
+      <div class="noi-group-title" style="margin-top:10px;">Operating Expenses (Monthly)</div>
+      <div class="breakdown-row"><span class="breakdown-label">Property Tax</span><span class="breakdown-value">${fmt(opTax)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Insurance</span><span class="breakdown-value">${fmt(opIns)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Maintenance</span><span class="breakdown-value">${fmt(opMaint)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">CapEx</span><span class="breakdown-value">${fmt(opCapex)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Utilities</span><span class="breakdown-value">${fmt(opUtil)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">HOA</span><span class="breakdown-value">${fmt(opHoa)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Mgmt Fee (${opMgmtPct}%)</span><span class="breakdown-value">${fmtDec(opMgmtAmt, 2)}</span></div>
+      <div class="breakdown-row total"><span class="breakdown-label">Total OpEx / mo</span><span class="breakdown-value accent">${fmtDec(totalOpEx, 2)}</span></div>
+      <div class="breakdown-row" style="margin-top:8px;"><span class="breakdown-label">Monthly NOI</span><span class="breakdown-value accent">${fmtDec(monthlyNOI, 2)}</span></div>
+      <div class="breakdown-row"><span class="breakdown-label">Mortgage (P&amp;I)</span><span class="breakdown-value">${fmtDec(mortPayment, 2)}</span></div>
+      <div class="breakdown-row total"><span class="breakdown-label">Monthly Cash Flow</span><span class="breakdown-value accent">${fmtDec(monthlyCF, 2)}</span></div>
+    `;
+
+    // Rule checks
+    const purchasePrice = pp;
+    const onePercent = purchasePrice > 0 ? effectiveMonthlyIncome / purchasePrice * 100 : 0;
+    const onePercentPass = onePercent >= 1;
+    const opExRatio = effectiveMonthlyIncome > 0 ? (totalOpEx / effectiveMonthlyIncome) * 100 : 0;
+    const fiftyPercentPass = opExRatio <= 50;
+    const dscrPass = dscr !== null ? dscr >= 1.25 : true;
+
+    $('r-ruleChecks').innerHTML = `
+      <div class="rule-check ${onePercentPass ? 'pass' : 'fail'}">
+        <span class="rule-icon">${onePercentPass ? '✅' : '❌'}</span>
+        <div class="rule-text">
+          <strong>1% Rule</strong>
+          <span>Monthly rent ≥ 1% of purchase price. Current: ${onePercent.toFixed(2)}%</span>
+        </div>
+        <span class="rule-result">${onePercentPass ? 'PASS' : 'FAIL'}</span>
+      </div>
+      <div class="rule-check ${fiftyPercentPass ? 'pass' : 'fail'}">
+        <span class="rule-icon">${fiftyPercentPass ? '✅' : '❌'}</span>
+        <div class="rule-text">
+          <strong>50% Rule</strong>
+          <span>OpEx ≤ 50% of gross income. Current: ${opExRatio.toFixed(1)}%</span>
+        </div>
+        <span class="rule-result">${fiftyPercentPass ? 'PASS' : 'FAIL'}</span>
+      </div>
+      <div class="rule-check ${dscrPass ? 'pass' : 'fail'}">
+        <span class="rule-icon">${dscrPass ? '✅' : '❌'}</span>
+        <div class="rule-text">
+          <strong>DSCR ≥ 1.25</strong>
+          <span>Lender minimum. Current: ${dscr !== null ? dscr.toFixed(2) + 'x' : 'N/A (no mortgage)'}</span>
+        </div>
+        <span class="rule-result">${dscrPass ? 'PASS' : 'FAIL'}</span>
+      </div>
+    `;
+
+    // Update collapsible summaries
+    setText('rp-property-summary', `${fmt(pp)} · ${sqft.toLocaleString()} sqft · ${v('r-bedrooms')} beds`);
+    setText('rp-comps-summary', `ARV ~${fmt(subjectArv > 0 ? subjectArv : blendedArv)} · Avg ${fmtDec(avgPsf, 2)}/sqft`);
+    setText('rp-build-summary', `Total rehab: ${fmt(totalRehab)}`);
+    setText('rp-capital-summary', `Equity: ${fmt(equity)} · Debt: ${fmt(debt)} · ${intRate}% rate`);
+    setText('rp-timeline-summary', `${loanTerm || conMonths} months · Total carry: ${fmt(totalCarry)}`);
+  }
+
+  // ── Init ──
+  function init() {
+    // Position the slider after layout
+    requestAnimationFrame(() => {
+      positionSlider();
+      calc();
+    });
+  }
+
+  window.addEventListener('resize', positionSlider);
+  document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState !== 'loading') init();
+})();
+</script>
+</body>
+</html>
