@@ -61,22 +61,47 @@
     padding: 32px 0 24px;
     position: relative;
   }
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 10px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(168,85,247,0.3);
+    transition: all 0.4s;
+  }
+  body.rental-mode .logo-icon {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    box-shadow: 0 4px 20px rgba(34,197,94,0.3);
+  }
+  .logo-icon svg { width: 24px; height: 24px; }
   .header h1 {
     font-size: clamp(22px, 4vw, 32px);
     font-weight: 700;
-    background: linear-gradient(135deg, #a855f7, #ec4899);
+    color: #f0eef5;
+    margin-bottom: 0;
+    line-height: 1.2;
+  }
+  .header .accent {
+    display: block;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 700;
+    background: linear-gradient(135deg, #a855f7, #7c3aed, #6366f1);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 6px;
-    transition: background var(--transition);
+    transition: all 0.4s;
   }
-  body.rental-mode .header h1 {
-    background: linear-gradient(135deg, #22c55e, #06b6d4);
+  body.rental-mode .header .accent {
+    background: linear-gradient(135deg, #22c55e, #34d399, #2dd4bf);
     -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .header p { color: var(--text-muted); font-size: 13px; }
+  .header p { color: var(--text-muted); font-size: 13px; margin-top: 6px; }
 
   /* ── Mode Toggle ── */
   .mode-toggle-wrap {
@@ -278,6 +303,28 @@
     transition: color var(--transition);
   }
   body.rental-mode .display-val { color: var(--green); }
+
+  .display-row {
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+  .display-row .dr-label { color: var(--text-muted); }
+  .display-row .dr-value { font-weight: 600; }
+  .display-row.dr-green {
+    background: linear-gradient(135deg, rgba(34,197,94,0.06), rgba(52,211,153,0.04));
+    border: 1px solid rgba(34,197,94,0.15);
+  }
+  .display-row.dr-green .dr-value { color: #86efac; }
+  .display-row.dr-orange {
+    background: linear-gradient(135deg, rgba(251,146,60,0.06), rgba(249,115,22,0.04));
+    border: 1px solid rgba(249,115,22,0.15);
+  }
+  .display-row.dr-orange .dr-value { color: #fdba74; }
 
   /* ── Divider ── */
   .divider {
@@ -555,14 +602,14 @@
 
   <!-- HEADER -->
   <div class="header">
-    <h1>
-      <svg style="width:28px;height:28px;vertical-align:middle;margin-right:8px;display:inline-block;" viewBox="0 0 24 24" fill="none" stroke="url(#hg)" stroke-width="2">
-        <defs><linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#ec4899"/></linearGradient></defs>
-        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+        <path d="M3 12l9-8 9 8"/><path d="M6 10v9h4v-5h4v5h4v-9"/>
       </svg>
-      Real Estate Investment Analyzer
-    </h1>
-    <p>Comprehensive deal analysis for flips &amp; rentals — real-time calculations</p>
+    </div>
+    <h1>Real Estate Investment</h1>
+    <span class="accent">Analyzer</span>
+    <p>Model flips, long-term rentals &amp; Airbnb returns in one place</p>
   </div>
 
   <!-- MODE TOGGLE -->
@@ -1143,7 +1190,7 @@
             </div>
           </div>
           <div class="divider"></div>
-          <div class="field"><label>Effective Monthly Income</label><div class="display-val" id="r-effectiveIncome">—</div></div>
+          <div class="display-row dr-green"><span class="dr-label">Effective Monthly Income</span><span class="dr-value" id="r-effectiveIncome">—</span></div>
         </div>
       </div>
     </div>
@@ -1207,8 +1254,8 @@
             </div>
           </div>
           <div class="divider"></div>
-          <div class="field"><label>Gross Monthly Revenue</label><div class="display-val" id="r-grossMonthlyRev">—</div></div>
-          <div class="field" style="margin-top:6px;"><label>Net Monthly (after fees/cleaning)</label><div class="display-val" id="r-netMonthlyRev">—</div></div>
+          <div class="display-row dr-green"><span class="dr-label">Gross Monthly Revenue</span><span class="dr-value" id="r-grossMonthlyRev">—</span></div>
+          <div class="display-row dr-green"><span class="dr-label">Net Monthly (after fees/cleaning)</span><span class="dr-value" id="r-netMonthlyRev">—</span></div>
         </div>
       </div>
     </div>
