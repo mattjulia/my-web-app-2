@@ -186,7 +186,6 @@
     text-overflow: ellipsis;
   }
   .panel.collapsed .panel-summary { display: block; }
-  .panel-body { }
   .panel.collapsed .panel-body { display: none; }
 
   /* ── Grid ── */
@@ -472,6 +471,7 @@
   }
   .badge-purple { background: rgba(168,85,247,0.2); color: #a855f7; border: 1px solid rgba(168,85,247,0.3); }
   .badge-green { background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+  .badge-red { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
 
   /* ── NOI Table ── */
   .noi-section { margin-top: 12px; }
@@ -1079,8 +1079,8 @@
       </div>
       <div class="panel-body">
         <div class="sub-toggle">
-          <button class="sub-btn active" id="btnLT" onclick="setRentalType('lt')">📋 Long-Term</button>
-          <button class="sub-btn" id="btnST" onclick="setRentalType('st')">✈️ Short-Term / Airbnb</button>
+          <button class="sub-btn active" id="btnLT" onclick="setRentalType('lt')" aria-label="Long-Term rental">📋 Long-Term</button>
+          <button class="sub-btn" id="btnST" onclick="setRentalType('st')" aria-label="Short-Term / Airbnb rental">✈️ Short-Term / Airbnb</button>
         </div>
 
         <!-- LONG-TERM -->
@@ -1441,11 +1441,7 @@
 
     // Badge
     const badge = $('f-profitBadge');
-    badge.className = 'badge ' + (netProfit >= 0 ? 'badge-purple' : 'badge-fail');
-    if (netProfit < 0) badge.style.background = 'rgba(239,68,68,0.2)';
-    else badge.style.background = '';
-    badge.style.color = netProfit >= 0 ? '' : '#ef4444';
-    badge.style.borderColor = netProfit >= 0 ? '' : 'rgba(239,68,68,0.3)';
+    badge.className = 'badge ' + (netProfit >= 0 ? 'badge-purple' : 'badge-red');
     badge.textContent = netProfit >= 0 ? '✓ Profitable' : '✗ Loss';
 
     // Results grid
@@ -1604,7 +1600,8 @@
     const mortTerm = v('r-mortgageTerm') * 12;
     let mortPayment = 0;
     if (mortRate > 0 && mortTerm > 0 && mortAmt > 0) {
-      mortPayment = mortAmt * mortRate * Math.pow(1 + mortRate, mortTerm) / (Math.pow(1 + mortRate, mortTerm) - 1);
+      const compoundFactor = Math.pow(1 + mortRate, mortTerm);
+      mortPayment = mortAmt * mortRate * compoundFactor / (compoundFactor - 1);
     }
     setText('r-mortgagePayment', fmtDec(mortPayment, 2));
 
@@ -1671,10 +1668,8 @@
 
     // Badge
     const badge = $('r-cashflowBadge');
+    badge.className = 'badge ' + (monthlyCF >= 0 ? 'badge-green' : 'badge-red');
     badge.textContent = monthlyCF >= 0 ? '✓ Positive Cash Flow' : '✗ Negative Cash Flow';
-    badge.style.background = monthlyCF >= 0 ? '' : 'rgba(239,68,68,0.2)';
-    badge.style.color = monthlyCF >= 0 ? '' : '#ef4444';
-    badge.style.borderColor = monthlyCF >= 0 ? '' : 'rgba(239,68,68,0.3)';
 
     // Results
     $('r-resultsGrid').innerHTML = `
@@ -1765,7 +1760,7 @@
     `;
 
     // Update collapsible summaries
-    setText('rp-property-summary', `${fmt(pp)} · ${sqft.toLocaleString()} sqft · ${v('r-bedrooms')} bd`);
+    setText('rp-property-summary', `${fmt(pp)} · ${sqft.toLocaleString()} sqft · ${v('r-bedrooms')} beds`);
     setText('rp-comps-summary', `ARV ~${fmt(subjectArv > 0 ? subjectArv : blendedArv)} · Avg ${fmtDec(avgPsf, 2)}/sqft`);
     setText('rp-build-summary', `Total rehab: ${fmt(totalRehab)}`);
     setText('rp-capital-summary', `Equity: ${fmt(equity)} · Debt: ${fmt(debt)} · ${intRate}% rate`);
